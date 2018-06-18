@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -315,16 +314,17 @@ type TLSAuthTransport struct {
 
 // Client returns an *http.Client that makes requests that are authenticated
 // using TLS Authentication.
-func (t *TLSAuthTransport) Client() *http.Client {
+func (t *TLSAuthTransport) Client() (*http.Client, error) {
 	// Load client cert
 	cert, err := tls.LoadX509KeyPair(t.Crtfile, t.Keyfile)
 	if err != nil {
-		log.Fatal(err)
+		err := fmt.Errorf("LoadX509KeyPair failed. Please make sure that the correct certificate files are listed. Error: %v", err)
+		return nil, err
 	}
 	tc := &tls.Config{Certificates: []tls.Certificate{cert}}
 	tr := &http.Transport{TLSClientConfig: tc}
 
-	return &http.Client{Transport: tr}
+	return &http.Client{Transport: tr}, nil
 }
 
 // BasicAuthTransport is an http.RoundTripper that authenticates all requests
