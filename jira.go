@@ -2,9 +2,11 @@ package jira
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -299,6 +301,30 @@ func (r *Response) populatePageValues(v interface{}) {
 		r.Total = value.Total
 	}
 	return
+}
+
+// TLSAuthTransport ...
+type TLSAuthTransport struct {
+	Crtfile string
+	Keyfile string
+
+	// Transport is the underlying HTTP transport to use when making requests.
+	// It will default to http.DefaultTransport if nil.
+	Transport http.RoundTripper
+}
+
+// Client returns an *http.Client that makes requests that are authenticated
+// using TLS Authentication.
+func (t *TLSAuthTransport) Client() *http.Client {
+	// Load client cert
+	cert, err := tls.LoadX509KeyPair(t.Crtfile, t.Keyfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tc := &tls.Config{Certificates: []tls.Certificate{cert}}
+	tr := &http.Transport{TLSClientConfig: tc}
+
+	return &http.Client{Transport: tr}
 }
 
 // BasicAuthTransport is an http.RoundTripper that authenticates all requests
